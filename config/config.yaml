@@ -1,0 +1,9 @@
+artifacts_root: artifacts
+
+data_ingestion:
+  root_dir: artifacts/data_ingestion
+  source_URL: https://raw.githubusercontent.com/amaanbkn/Tutorial-dataset/main/Chicken-fecal-images.zip
+  local_data_file: artifacts/data_ingestion/chicken_images.zip
+  unzip_dir: artifacts/data_ingestion/extracted/
+
+

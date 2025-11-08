@@ -1,37 +1,32 @@
-import os
-import urllib.request as request
-from zipfile import ZipFile
-import tensorflow as tf # type: ignore
-import time
+import os, time, tensorflow as tf # type: ignore
 from cnnClassifier.entity.config_entity import PrepareCallbacksConfig
-
 
 class PrepareCallback:
     def __init__(self, config: PrepareCallbacksConfig):
         self.config = config
 
-
-    
-    @property
     def _create_tb_callbacks(self):
-        timestamp = time.strftime("%Y-%m-%d-%H-%M-%S")
-        tb_running_log_dir = os.path.join(
-            self.config.tensorboard_root_log_dir,
-            f"tb_logs_at_{timestamp}",
-        )
-        return tf.keras.callbacks.TensorBoard(log_dir=tb_running_log_dir)
-    
+        ts = time.strftime("%Y-%m-%d-%H-%M-%S")
+        tb_root = str(self.config.tensorboard_root_log_dir)
+        tb_dir = os.path.join(tb_root, f"tb_logs_at_{ts}")
+        return tf.keras.callbacks.TensorBoard(log_dir=tb_dir)
 
-    @property
     def _create_ckpt_callbacks(self):
-        return tf.keras.callbacks.ModelCheckpoint(
-            filepath=self.config.checkpoint_model_filepath,
-            save_best_only=True
-        )
-
+        ckpt_path = str(self.config.checkpoint_model_filepath)  # ensure str
+        if ckpt_path.endswith(("/", "\\")) or os.path.isdir(ckpt_path):
+            ckpt_path = os.path.join(ckpt_path, "model.ckpt.keras")
+        if not (ckpt_path.endswith(".keras") or ckpt_path.endswith(".h5")):
+            ckpt_path += ".keras"
+        return tf.keras.callbacks.ModelCheckpoint(filepath=ckpt_path, save_best_only=True)
 
     def get_tb_ckpt_callbacks(self):
-        return [
-            self._create_tb_callbacks,
-            self._create_ckpt_callbacks
-        ]
+        return [self._create_tb_callbacks(), self._create_ckpt_callbacks()]
+    def get_prepare_callback_config(self) -> PrepareCallbacksConfig:
+    cfg = self.config.prepare_callbacks # type: ignore
+    model_ckpt_dir = os.path.dirname(str(cfg.checkpoint_model_filepath))
+    create_directories([model_ckpt_dir, str(cfg.tensorboard_root_log_dir)]) # type: ignore
+    return PrepareCallbacksConfig(
+        tensorboard_root_log_dir=str(cfg.tensorboard_root_log_dir),
+        checkpoint_model_filepath=str(cfg.checkpoint_model_filepath),
+    )
+
